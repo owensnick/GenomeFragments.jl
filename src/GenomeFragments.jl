@@ -1,5 +1,5 @@
 module GenomeFragments
 
-greet() = print("Hello World!")
+using GenomicFeatures, DataStructures, BioAlignments, Mmap, UnalignedVectors
 
 end # module

@@ -3,6 +3,13 @@ uuid = "4457e3f0-28e6-4a0e-b59c-01e4587e0deb"
 authors = ["owensnick <owensnick@gmail.com>"]
 version = "0.1.0"
 
+[deps]
+BioAlignments = "00701ae9-d1dc-5365-b64a-a3a3ebf5695e"
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+GenomicFeatures = "899a7d2d-5c61-547b-bef9-6698a8d05446"
+Mmap = "a63ad114-7e13-5084-954f-fe012c677804"
+UnalignedVectors = "f306ff79-ba0f-5c52-9e7c-6e6505f53397"
+
 [compat]
 julia = "1"
 
