@@ -1,5 +1,7 @@
 module GenomeFragments
 
+## This is a module for handling high throughput sequencing reads
+
 using GenomicFeatures, DataStructures, BioAlignments, Mmap, UnalignedVectors
 
 
@@ -131,10 +133,12 @@ function load_frag_matrix(file, paired=true)
 
     paired, numregions, totalfrags, numfields, fields, totalecfrags, datatype, index, chromindex, fragstats = read_header_footer(io, paired)
 
+    #  @show paired, numregions, totalfrags, numfields, fields, totalecfrags, datatype, index, chromindex, fragstats
 
     a = Mmap.mmap(io, Vector{UInt8}, sizeof(datatype)*numfields*totalfrags, position(io))
     # Create an array of the desired eltype and size:
     ua = UnalignedVector{datatype}(a)
+
     F = reshape(ua, (numfields, totalfrags))
 
     ft = typeof(F)
@@ -150,7 +154,7 @@ end
 
 
 ### for single reads
-function estreadlength(F, nr=500)
+function estreadlength(F, nr=min(500, size(F, 2)))
     readlengths = counter(Int)
     for i = 1:nr
         readlength = F[2, i] - F[1, i] + 1
