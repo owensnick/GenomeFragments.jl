@@ -2,11 +2,11 @@ module GenomeFragments
 
 ## This is a module for handling high throughput sequencing reads
 
-using GenomicFeatures, DataStructures, BioAlignments, Mmap, UnalignedVectors
+using GenomicFeatures, DataStructures, BioAlignments, Mmap, UnalignedVectors, XAM, IterTools
 
+include("buildfm.jl")
 
-
-export FragMatrix, FragMatrixPair, FragMatrixSingle, get_frags, chrom_lt, load_frag_matrix, totalfrags
+export FragMatrix, FragMatrixPair, FragMatrixSingle, get_frags, chrom_lt, load_frag_matrix, totalfrags, streambam, qualityfilt, filterpairfirst, filterpairfirstpp
 
 abstract type FragMatrix end
 

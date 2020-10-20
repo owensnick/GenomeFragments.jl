@@ -1,17 +1,19 @@
 
-using XAM, GenomicFeatures
-using IterTools
+#using XAM, GenomicFeatures
+#using IterTools
 
 qualityfilt(τ) = r -> BAM.mappingquality(r) >= τ
 @inline isunique(record) = BAM.mappingquality(record) == 255
 #@inline isreverse(record)   = (BAM.flag(record) & SAM.FLAG_REVERSE) != 0
 @inline ispair(record)      = (BAM.flag(record) & SAM.FLAG_PAIRED)  != 0
 @inline firstinpair(record) = (BAM.flag(record) & SAM.FLAG_READ1)   != 0
-
+@inline properpair(record)  = (BAM.flag(record) & SAM.FLAG_PROPER_PAIR) != 0
 @inline posstrand(record)  = (BAM.position(record), BAM.ispositivestrand(record))
+
 
 @inline getstrand(record) = BAM.ispositivestrand(record) ? STRAND_POS : STRAND_NEG
 @inline filterpairfirst(record) = BAM.ismapped(record) && (!ispair(record) ? true : (((BAM.position(record) == BAM.nextposition(record)) && BAM.ispositivestrand(record)) || (BAM.templength(record) ≥ 0)))
+@inline filterpairfirstpp(record) = BAM.ismapped(record) && properpair(record) && (!ispair(record) ? true : (((BAM.position(record) == BAM.nextposition(record)) && BAM.ispositivestrand(record)) || (BAM.templength(record) ≥ 0)))
 
 #### Function to get fragment coords based on flag (see classify_record.jl)
 #### Works for single and paired end
@@ -124,7 +126,7 @@ function test_bam(bf="test\\test.bam")
 
     chroms
 end
-test_bam()
+
 
 
 
@@ -199,7 +201,7 @@ end
 
 
 
-function stream_reads_equiv_class_filter(bamreader, io, equivs=[(isunique, seqname)], T=Int32)
+function stream_reads_equiv_class_filter(bamreader, io, equivs=[(isunique, seqname)], T=Int32, pairfilt=filterpairfirst)
 
 
     haspaired = false
@@ -208,7 +210,7 @@ function stream_reads_equiv_class_filter(bamreader, io, equivs=[(isunique, seqna
     totalfrags = zeros(Int, length(chroms), length(equivs) + 1)
 
     index = 0
-    for group in IterTools.groupby(posstrand, Iterators.filter(filterpairfirst, bamreader))    
+    for group in IterTools.groupby(posstrand, Iterators.filter(pairfilt, bamreader))    
         sort!(group, by=BAM.templength)
         for template_group in IterTools.groupby(BAM.templength, group)
             
@@ -238,8 +240,8 @@ function stream_reads_equiv_class_filter(bamreader, io, equivs=[(isunique, seqna
     end
     chroms, totalfrags, haspaired
 end
-streambam("c:\\home\\julia\\test\\test.bam", "c:\\home\\julia\\test\\test.bin", [(qualityfilt(0), seqname), (qualityfilt(20), seqname)], ["q0", "q20"])
+#streambam("c:\\home\\julia\\test\\test.bam", "c:\\home\\julia\\test\\test.bin", [(qualityfilt(0), seqname), (qualityfilt(20), seqname)], ["q0", "q20"])
 
 
-streambam("c:\\home\\projects\\islets\\endoc\\k9\\bw2_k9me2.sort.bam", "c:\\home\\projects\\islets\\endoc\\k9\\bw2_k9me2.q30.sort.bin", [(qualityfilt(30), seqname)], ["q30"])
-streambam("c:\\home\\projects\\islets\\endoc\\k9\\bw2_k9me3.sort.bam", "c:\\home\\projects\\islets\\endoc\\k9\\bw2_k9me3.q30.sort.bin", [(qualityfilt(30), seqname)], ["q30"])
+#streambam("c:\\home\\projects\\islets\\endoc\\k9\\bw2_k9me2.sort.bam", "c:\\home\\projects\\islets\\endoc\\k9\\bw2_k9me2.q30.sort.bin", [(qualityfilt(30), seqname)], ["q30"])
+#streambam("c:\\home\\projects\\islets\\endoc\\k9\\bw2_k9me3.sort.bam", "c:\\home\\projects\\islets\\endoc\\k9\\bw2_k9me3.q30.sort.bin", [(qualityfilt(30), seqname)], ["q30"])
