@@ -131,7 +131,7 @@ end
 
 
 
-function streambam(bamfile, outfile, equivs=[(isunique, seqname)], labels=["uniseq"], T=Int32)
+function streambam(bamfile, outfile, equivs=[(isunique, seqname)], labels=["uniseq"]; T=Int32, pairfilt=filterpairfirst)
     println("[CFB]\tCollecting frags and counting equivalences streaming....")
     println("[CFB]\tEquiv funs   : ", equivs)
     println("[CFB]\tEquiv labels : ", labels)
@@ -147,7 +147,7 @@ function streambam(bamfile, outfile, equivs=[(isunique, seqname)], labels=["unis
     starttime = time()
     reader = open(BAM.Reader, bamfile)
 
-    chroms, totalfrags, paired = stream_reads_equiv_class_filter(reader, io, equivs, T)
+    chroms, totalfrags, paired = stream_reads_equiv_class_filter(reader, io, equivs, T=T, pairfilt=pairfilt)
     @show sum(totalfrags)
     display(totalfrags)
 
@@ -201,7 +201,7 @@ end
 
 
 
-function stream_reads_equiv_class_filter(bamreader, io, equivs=[(isunique, seqname)], T=Int32, pairfilt=filterpairfirst)
+function stream_reads_equiv_class_filter(bamreader, io, equivs=[(isunique, seqname)]; T=Int32, pairfilt=filterpairfirst)
 
 
     haspaired = false
