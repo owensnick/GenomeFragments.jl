@@ -6,7 +6,7 @@ using GenomicFeatures, DataStructures, BioAlignments, Mmap, UnalignedVectors, XA
 
 include("buildfm.jl")
 
-export FragMatrix, FragMatrixPair, FragMatrixSingle, get_frags, chrom_lt, load_frag_matrix, totalfrags, streambam, qualityfilt, filterpairfirst, filterpairfirstpp
+export FragMatrix, FragMatrixPair, FragMatrixSingle, get_frags, chrom_lt, load_frag_matrix, totalfrags, streambam, qualityfilt, filterpairfirst, filterpairfirstpp, barcode
 
 abstract type FragMatrix end
 
