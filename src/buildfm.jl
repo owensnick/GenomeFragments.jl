@@ -24,6 +24,11 @@ qualityfilt(τ) = r -> BAM.mappingquality(r) >= τ
 make_barcode_fun(bn=6) = (record) -> barcode(record, bn)
 make_template_barcode_fun(bn=6) = (record) -> (BAM.templength(record), barcode(record, bn))
 
+### Mapping quality group for bowtie2
+@inline editdistance(record) = record["NM"]::UInt8
+@inline hasgaps(record) = (record["XG"]::UInt8 != UInt8(0))
+@inline ishighquality(record) = isunique(record) && (editdistance(record) <= 3) && !hasgaps(record)
+
 #### Function to get fragment coords based on flag (see classify_record.jl)
 #### Works for single and paired end
 #### For single end reads coords are calculated
