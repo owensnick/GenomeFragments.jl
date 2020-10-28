@@ -17,8 +17,8 @@ qualityfilt(τ) = r -> BAM.mappingquality(r) >= τ
 
 
 #### Barcode functions
-@inline barcode(record, bn=6) = _barcode_name(BAM.seqname(record), bn)
-@inline _barcode_name(n, bn) = n[(rsearch(n, ':') + 1):end]
+@inline barcode(record, bn=6) = _barcode_name(BAM.seqname(record))
+@inline _barcode_name(n) = n[(first(findlast(":", n)) + 1):end]
 @inline template_barcode(record) = (BAM.templength(record), barcode(record))
 
 make_barcode_fun(bn=6) = (record) -> barcode(record, bn)
