@@ -211,11 +211,6 @@ end
 
 
 
-
-
-#####################################
-
-
 function fragheatmap!(H, p, chroms, locations, strands, FM::FragMatrixPair{T}, inc_fun=inc_heat_mid!, minfragsize=0, maxfragsize=500, data_entry=4, fn=identity; show_progress=true) where T
 
     fw = length(locations[1])
