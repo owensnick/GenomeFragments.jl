@@ -13,7 +13,8 @@ export FragMatrix, FragMatrixPair, FragMatrixSingle, get_frags, chrom_lt, load_f
        inc_heat_frag!, inc_heat_cut!, inc_heat_mid!,
        inc_heat_atac_cut!, inc_heat_atac_frag!, inc_meta_atac_frag!,
        inc_meta_mid_width, inc_heat_mid_width,
-       inc_heat_atac_cut_width, inc_meta_atac_cut_width
+       inc_heat_atac_cut_width, inc_meta_atac_cut_width,
+       readsintersecting, fragregion
 
 abstract type FragMatrix end
 
