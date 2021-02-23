@@ -154,7 +154,7 @@ function fragheatmap(chroms, locations, strands, FM::Vector{FragMatrixSingle{T}}
 end
 
 
-function libsize(FM, dataentry, fn=identity, minfrag=0, maxfrag=1000000)
+function libsize(FM::FragMatrixPair, dataentry, fn=identity, minfrag=0, maxfrag=1000000)
 
     σ = 0.0
     for i = 1:size(FM.FM, 2)
@@ -165,7 +165,7 @@ function libsize(FM, dataentry, fn=identity, minfrag=0, maxfrag=1000000)
 end
 
 
-function libsize(FM, dataentry, fn=identity)
+function libsize(FM::FragMatrixSingle, dataentry, fn=identity)
     σ = 0
     @inbounds for i = 1:size(FM.FM, 2)
         σ += fn(FM.FM[dataentry, i])
@@ -211,7 +211,7 @@ end
 
 
 
-function fragheatmap!(H, p, chroms, locations, strands, FM::FragMatrixPair{T}, inc_fun=inc_heat_mid!, minfragsize=0, maxfragsize=500, data_entry=4, fn=identity; show_progress=true) where T
+function fragheatmap!(H, p, chroms, locations, strands, FM::FragMatrixPair{T}, inc_fun=inc_heat_mid!, minfragsize=0, maxfragsize=500, data_entry=4, fn=identity; show_progress=true) where {T}
 
     fw = length(locations[1])
     
@@ -220,7 +220,6 @@ function fragheatmap!(H, p, chroms, locations, strands, FM::FragMatrixPair{T}, i
         V = get_frags(c, l, FM)
         isempty(V) && continue
         for i = 1:size(V, 2)
-        for col in eachcol(V)
             fp = V[2, i] - V[1, i] + 1
             ((fp < minfragsize) || (fp > maxfragsize)) && continue
             if s == "+"
@@ -242,7 +241,7 @@ function fragheatmap!(H, p, chroms, locations, strands, FM::FragMatrixPair{T}, i
     H
 end
 
-function fragheatmap!(H, p, chroms, locations, strands, FM::FragMatrixSingle{T}, inc_fun=inc_heat_mid!, fraglength=120, data_entry=4, fn=identity; show_progress=true) where T
+function fragheatmap!(H, p, chroms, locations, strands, FM::FragMatrixSingle{T}, inc_fun=inc_heat_mid!, fraglength=120, data_entry=4, fn=identity; show_progress=true) where {T}
 
     fw = length(locations[1])
     
@@ -271,7 +270,7 @@ function fragheatmap!(H, p, chroms, locations, strands, FM::FragMatrixSingle{T},
 end
 
 
-function fragheatmap!(H, p, chroms, locations, strands, FM::FragMatrixPair{T}, P::AccParamsPair{V, W}, show_progress=true) where {T, V, W}
+function fragheatmap!(H, p, chroms, locations, strands, FM::FragMatrixPair{T}, P::AccParamsPair{PV, PW}, show_progress=true) where {T, PV, PW}
 
     fw = length(locations[1])
     
@@ -280,7 +279,6 @@ function fragheatmap!(H, p, chroms, locations, strands, FM::FragMatrixPair{T}, P
         V = get_frags(c, l, FM)
         isempty(V) && continue
         for i = 1:size(V, 2)
-        for col in eachcol(V)
             fp = V[2, i] - V[1, i] + 1
             ((fp < P.minfragsize) || (fp > P.maxfragsize)) && continue
             if s == "+"
@@ -303,7 +301,7 @@ function fragheatmap!(H, p, chroms, locations, strands, FM::FragMatrixPair{T}, P
 end
 
 
-function fragheatmap!(H, p, chroms, locations, strands, FM::FragMatrixSingle{T}, P::AccParamsSingle{V, W}; show_progress=true) where {T, V, W}
+function fragheatmap!(H, p, chroms, locations, strands, FM::FragMatrixSingle{T}, P::AccParamsSingle{PV, PW}; show_progress=true) where {T, PV, PW}
 
     fw = length(locations[1])
     
