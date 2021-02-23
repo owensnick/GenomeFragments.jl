@@ -5,9 +5,15 @@ module GenomeFragments
 using GenomicFeatures, DataStructures, BioAlignments, Mmap, UnalignedVectors, XAM, IterTools
 
 include("buildfm.jl")
+include("processing.jl")
 
 export FragMatrix, FragMatrixPair, FragMatrixSingle, get_frags, chrom_lt, load_frag_matrix, totalfrags, streambam, qualityfilt, filterpairfirst, filterpairfirstpp, 
-       barcode, ishighquality, isunique
+       barcode, ishighquality, isunique,
+       inc_meta_frag!, inc_meta_cut!, inc_meta_mid!,
+       inc_heat_frag!, inc_heat_cut!, inc_heat_mid!,
+       inc_heat_atac_cut!, inc_heat_atac_frag!, inc_meta_atac_frag!,
+       inc_meta_mid_width, inc_heat_mid_width,
+       inc_heat_atac_cut_width, inc_meta_atac_cut_width
 
 abstract type FragMatrix end
 
