@@ -1,4 +1,26 @@
 
+############## param types
+
+abstract type AccParams end
+
+struct AccParamsSingle{V, W} <: AccParams
+    fraglength::Int
+    incfun::V
+    dataentry::Int
+    countfun::W
+end
+
+struct AccParamsPair{V, W} <: AccParams
+    minfragsize::Int
+    maxfragsize::Int
+    incfun::V
+    dataentry::Int
+    countfun::W
+end
+
+
+
+
 ### helper functions
 
 
@@ -98,3 +120,123 @@ end
 end
 
 
+
+function fragheatmap!(H, p, chroms, locations, strands, FM::FragMatrixPair{T}, inc_fun=inc_heat_mid!, minfragsize=0, maxfragsize=500, data_entry=4, fn=identity; show_progress=true) where T
+
+    fw = length(locations[1])
+    
+    for (k, (c, l, s)) in enumerate(zip(chroms, locations, strands))
+        show_progress && next!(p)
+        V = get_frags(c, l, FM)
+        isempty(V) && continue
+        for i = 1:size(V, 2)
+        for col in eachcol(V)
+            fp = V[2, i] - V[1, i] + 1
+            ((fp < minfragsize) || (fp > maxfragsize)) && continue
+            if s == "+"
+                mpl = V[1, i] - l.start + 1
+                mpr = V[2, i] - l.start + 1
+                strand = 1
+            else
+                mpl = l.stop - V[2, i] + 1
+                mpr = l.stop - V[1, i] + 1
+                strand = -1
+            end
+
+            ### flip missing?
+
+            w = fn(V[data_entry, i])
+            inc_fun(H, k, mpl, mpr,  w) 
+        end
+    end
+    H
+end
+
+function fragheatmap!(H, p, chroms, locations, strands, FM::FragMatrixSingle{T}, inc_fun=inc_heat_mid!, fraglength=120, data_entry=4, fn=identity; show_progress=true) where T
+
+    fw = length(locations[1])
+    
+    for (k, (c, l, str)) in enumerate(zip(chroms, locations, strands))
+        show_progress && next!(p)
+        V = get_frags(c, (l.start - 2*fraglength):(l.stop + 2*fraglength), FM)
+        isempty(V) && continue
+        for i = 1:size(V, 2)
+            strand, _ = GenomeFragments.get_strand_chrom_enc(V[3, i])
+            
+            if strand == STRAND_POS
+                s = V[1, i] - l.start + 1
+                e = s + fraglength - 1
+            else
+                e = V[2, i]  - l.start + 1
+                s = e - fraglength + 1
+            end
+            if str == "-"
+                s, e = fw - e + 1, fw - s + 1
+            end
+            w = fn(V[data_entry, i])
+            inc_fun(H, k, s, e,  w) 
+        end
+    end
+    H
+end
+
+
+function fragheatmap!(H, p, chroms, locations, strands, FM::FragMatrixPair{T}, P::AccParamsPair{V, W}, show_progress=true) where {T, V, W}
+
+    fw = length(locations[1])
+    
+    for (k, (c, l, s)) in enumerate(zip(chroms, locations, strands))
+        show_progress && next!(p)
+        V = get_frags(c, l, FM)
+        isempty(V) && continue
+        for i = 1:size(V, 2)
+        for col in eachcol(V)
+            fp = V[2, i] - V[1, i] + 1
+            ((fp < P.minfragsize) || (fp > P.maxfragsize)) && continue
+            if s == "+"
+                mpl = V[1, i] - l.start + 1
+                mpr = V[2, i] - l.start + 1
+                strand = 1
+            else
+                mpl = l.stop - V[2, i] + 1
+                mpr = l.stop - V[1, i] + 1
+                strand = -1
+            end
+
+            ### flip missing?
+
+            w = P.countfun(V[data_entry, i])
+            P.incfun(H, k, mpl, mpr,  w) 
+        end
+    end
+    H
+end
+
+
+function fragheatmap!(H, p, chroms, locations, strands, FM::FragMatrixSingle{T}, P::AccParamsSingle{V, W}; show_progress=true) where {T, V, W}
+
+    fw = length(locations[1])
+    
+    for (k, (c, l, str)) in enumerate(zip(chroms, locations, strands))
+        show_progress && next!(p)
+        V = get_frags(c, (l.start - 2*P.fraglength):(l.stop + 2*P.fraglength), FM)
+        isempty(V) && continue
+        for i = 1:size(V, 2)
+            strand, _ = GenomeFragments.get_strand_chrom_enc(V[3, i])
+            
+            if strand == STRAND_POS
+                s = V[1, i] - l.start + 1
+                e = s + fraglength - 1
+            else
+                e = V[2, i]  - l.start + 1
+                s = e - fraglength + 1
+            end
+            if str == "-"
+                s, e = fw - e + 1, fw - s + 1
+            end
+            w = P.countfun(V[data_entry, i])
+            P.incfun(H, k, s, e,  w) 
+        end
+    end
+    H
+end
