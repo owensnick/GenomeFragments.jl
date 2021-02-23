@@ -120,6 +120,101 @@ end
 end
 
 
+#################### fragheatmap
+
+
+
+function fragheatmap(chroms, locations, strands, FM::Vector{FragMatrixSingle{T}}, inc_fun=inc_heat_mid!, fraglength=120, data_entry=4, fn=identity; norm_scale=1e+6, norm_type=:mpm, show_progress=true) where T
+
+    fw = length(locations[1])
+    H = zeros(Float64, fw, length(chroms))
+    p = ProgressMeter.Progress(length(chroms)*length(FM))
+    for F in FM
+        TH = zeros(Float64, fw, length(chroms))
+        fragheatmap!(TH, p, chroms, locations, strands, F, inc_fun, fraglength, data_entry, fn, show_progress=show_progress)
+        if norm_type == :mpm
+            H .+= norm_scale.*TH./F.totalecfrags[data_entry - 3]
+        elseif norm_type == :mpm_f
+            t = sum(fn, view(F.FM, data_entry, :))
+            H .+= norm_scale.*TH./t
+	    elseif norm_type == :frag_region
+	        H .+= norm_scale.*TH/sum(TH)
+        elseif norm_type == :total
+            H += TH
+        else
+            H += TH
+        end
+    end
+    if norm_type == :total
+        H .*= norm_scale/sum(F.totalecfrags[data_entry - 3] for F in FM)
+    else
+        H ./= length(FM)
+    end
+    H
+end
+
+
+function libsize(FM, dataentry, fn=identity, minfrag=0, maxfrag=1000000)
+
+    σ = 0.0
+    for i = 1:size(FM.FM, 2)
+        fp = FM.FM[2, i] - FM.FM[1, i] + 1
+        σ += ifelse(minfrag ≤ fp ≤ maxfrag, fn(FM.FM[dataentry, i]), 0.0)
+    end
+    σ
+end
+
+
+function libsize(FM, dataentry, fn=identity)
+    σ = 0
+    @inbounds for i = 1:size(FM.FM, 2)
+        σ += fn(FM.FM[dataentry, i])
+    end
+    σ
+end
+
+
+
+function fragheatmap(chroms, locations, strands, FM::Vector{FragMatrixPair{T}}, inc_fun=inc_heat_mid!, minfragsize=0, maxfragsize=500, data_entry=4, fn=identity; norm_scale=1e+6, norm_type=:mpm, show_progress=true) where T
+
+    fw = length(locations[1])
+    H = zeros(Float64, fw, length(chroms))
+    p = ProgressMeter.Progress(length(chroms)*length(FM))
+    for F in FM
+        TH = zeros(Float64, fw, length(chroms))
+        fragheatmap!(TH, p, chroms, locations, strands, F, inc_fun, minfragsize, maxfragsize, data_entry, fn, show_progress=show_progress)
+        if norm_type == :mpm
+            H .+= norm_scale.*TH./F.totalecfrags[data_entry - 3]
+        elseif norm_type == :mpm_f
+            t = sum(fn, view(F.FM, data_entry, :))
+            H .+= norm_scale.*TH./t
+        elseif norm_type == :frag
+            σ = libsize(F, data_entry, fn, minfragsize, maxfragsize)
+            H .+= norm_scale.*TH./σ
+	elseif norm_type == :frag_region
+	    H .+= norm_scale.*TH/sum(TH)
+        elseif norm_type == :total
+            H += TH
+        else
+            H += TH
+        end
+    end
+    if norm_type == :total
+        H .*= 1e+6/sum(F.totalecfrags[data_entry - 3] for F in FM)
+    else
+        H ./= length(FM)
+    end
+    H
+end
+
+
+
+
+
+
+
+#####################################
+
 
 function fragheatmap!(H, p, chroms, locations, strands, FM::FragMatrixPair{T}, inc_fun=inc_heat_mid!, minfragsize=0, maxfragsize=500, data_entry=4, fn=identity; show_progress=true) where T
 
