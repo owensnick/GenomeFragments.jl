@@ -9,6 +9,7 @@ DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 GenomicFeatures = "899a7d2d-5c61-547b-bef9-6698a8d05446"
 IterTools = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
 Mmap = "a63ad114-7e13-5084-954f-fe012c677804"
+ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
 UnalignedVectors = "f306ff79-ba0f-5c52-9e7c-6e6505f53397"
 XAM = "d759349c-bcba-11e9-07c2-5b90f8f05f7c"
 
