@@ -2,7 +2,7 @@ module GenomeFragments
 
 ## This is a module for handling high throughput sequencing reads
 
-using GenomicFeatures, DataStructures, BioAlignments, Mmap, UnalignedVectors, XAM, IterTools
+using GenomicFeatures, DataStructures, BioAlignments, Mmap, UnalignedVectors, XAM, IterTools, ProgressMeter
 
 
 export FragMatrix, FragMatrixPair, FragMatrixSingle, get_frags, chrom_lt, load_frag_matrix, totalfrags, streambam, qualityfilt, filterpairfirst, filterpairfirstpp, 
@@ -12,7 +12,8 @@ export FragMatrix, FragMatrixPair, FragMatrixSingle, get_frags, chrom_lt, load_f
        inc_heat_atac_cut!, inc_heat_atac_frag!, inc_meta_atac_frag!,
        inc_meta_mid_width, inc_heat_mid_width,
        inc_heat_atac_cut_width, inc_meta_atac_cut_width,
-       readsintersecting, fragregion
+       readsintersecting, fragregion,
+       fragheatmap, fragheatmap!
 
 
 include("fragmatrix.jl")
