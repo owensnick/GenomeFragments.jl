@@ -274,7 +274,7 @@ end
 ######## single cell versions
 
 function streambam_singlecell(bamfile, outfile, equivs=[(isunique, seqname)], labels=["uniseq"],  sc_bcf = singlecellbarcode, sc_label="sc_bc"; T=Int32, pairfilt=filterpairfirst)
-    println("[CFB]\tCollecting frags and counting equivalences streaming....")
+    println("[CFB]\tCollecting single cell frags and counting equivalences streaming....")
     println("[CFB]\tEquiv funs        : ", equivs)
     println("[CFB]\tEquiv labels      : ", labels)
     println("[CFB]\tSinglecellbarcode : ", sc_label)
