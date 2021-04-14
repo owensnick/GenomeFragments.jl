@@ -24,6 +24,20 @@ qualityfilt(τ) = r -> BAM.mappingquality(r) >= τ
 make_barcode_fun(bn=6) = (record) -> barcode(record, bn)
 make_template_barcode_fun(bn=6) = (record) -> (BAM.templength(record), barcode(record, bn))
 
+
+@inline singlecellbarcode(record) = _sbc_name(BAM.seqname(record))
+@inline function _sbc_name(tn)
+    startind = findfirst(':', tn)
+    isnothing(startind) && error("Barcode not found in $tn")
+    startind += 1
+    stopind = findnext(':', tn, startind)
+    isnothing(stopind) && error("Barcode not found in $tn")
+    stopind -= 1
+    parse(Int, tn[startind:stopind])
+end
+
+## s = "@SRR12957016.1:1782:CACAGAACAAGATACCTGGAG:NB501692:112:HJLJHAFXY:1:11101:14332:1034"
+
 ### Mapping quality group for bowtie2
 @inline editdistance(record) = record["NM"]::UInt8
 @inline hasgaps(record) = (record["XG"]::UInt8 != UInt8(0))
@@ -238,6 +252,7 @@ function stream_reads_equiv_class_filter(bamreader, io, equivs=[(isunique, seqna
             
             chromind = chromindex[chrom]
 
+
             # display((fragstart, fragstop, set_strand_chrom_enc(fragstrand, chromind, UInt32), (fc for fc in frag_counts)...))
             write(io, T(fragstart))         ### start
             write(io, T(fragstop))          ### stop
@@ -254,8 +269,131 @@ function stream_reads_equiv_class_filter(bamreader, io, equivs=[(isunique, seqna
     end
     chroms, totalfrags, haspaired
 end
+
+
+######## single cell versions
+
+function streambam_singlecell(bamfile, outfile, equivs=[(isunique, seqname)], labels=["uniseq"],  sc_bcf = singlecellbarcode, sc_label="sc_bc"; T=Int32, pairfilt=filterpairfirst)
+    println("[CFB]\tCollecting frags and counting equivalences streaming....")
+    println("[CFB]\tEquiv funs        : ", equivs)
+    println("[CFB]\tEquiv labels      : ", labels)
+    println("[CFB]\tSinglecellbarcode : ", sc_label)
+    println("[CFB]\tWriting to        : ", outfile)
+
+    io = open(outfile, "w")
+    ##### write header
+    println(io, "#bottom_header")
+    pos_buff = 0
+    write(io, pos_buff)
+
+
+    starttime = time()
+    reader = open(BAM.Reader, bamfile)
+
+    chroms, totalfrags, paired = stream_reads_equiv_class_filter_single_cell(reader, io, equivs, sc_bcf, T=T, pairfilt=pairfilt)
+    @show sum(totalfrags)
+    display(totalfrags)
+
+
+    index_table = (chrom=chroms, frags=totalfrags[:, 1], frags_ec=[totalfrags[i, 2:end] for i = 1:size(totalfrags, 1)])
+    display(index_table)
+
+    display(sum(index_table.frags_ec))
+    display(sum(totalfrags[:, 2:end], dims=1))
+    # display(index_table)
+    # println("[CFB]\tWriting header:")
+
+    # pos_buff = position(io)
+
+    # println(io, "#paired\t",   paired)
+    # println(io, "#numregions\t",   length(chroms))
+    # println(io, "#totalfrags\t", sum(index_table[:frags]))
+    # println(io, "#totalecfrags\t", sum(index_table[:frags_ec]))
+    # println(io, "#numfields\t", 3 + length(equiv_funs))
+
+
+    println("[CFB]\tWriting header:")
+
+    pos_buff = position(io)
+
+    println(io, "#paired\t",   paired)
+    println(io, "#numregions\t",   length(chroms))
+    println(io, "#totalfrags\t", sum(totalfrags[:, 1]))
+    println(io, "#totalecfrags\t", vec(sum(totalfrags[:, 2:end], dims=1)))
+    println(io, "#numfields\t", 3 + length(equivs) + 1)
+    println(io, "#fields\t[", join(["start" ; "stop" ; "strand_chrom_enc"; labels ; sc_label], ", "), "]")
+    println(io, "#dataencoding\t", T)
+
+    ### write index
+    frags    = totalfrags[:, 1]
+    cumfrags = cumsum(frags)
+    fragind  = map((s, e) -> s:e, [0 ; cumfrags[1:end-1]] .+ 1, cumfrags)
+    println(io, "#index\t", join(zip(chroms, fragind), ","))
+
+    ##### rewrite header
+    seekstart(io)
+    println(io, "#bottom_header")
+    write(io, pos_buff)
+
+    close(io)
+    println("[CFB]\tcomplete in ", time() - starttime, " seconds")
+
+end
+
+function stream_reads_equiv_class_filter_single_cell(bamreader, io, equivs=[(isunique, seqname)], sc_bcf = singlecellbarcode; T=Int32, pairfilt=filterpairfirst)
+
+
+
+    haspaired = false
+    chroms = [v["SN"] for v in findall(BAM.header(bamreader), "SQ")]
+    chromindex = Dict(chroms[i] => i for i = 1:length(chroms))
+    totalfrags = zeros(Int, length(chroms), length(equivs) + 1)
+
+    index = 0
+    for group in IterTools.groupby(posstrand, Iterators.filter(pairfilt, bamreader))    
+        sort!(group, by=BAM.templength)
+        for template_group in IterTools.groupby(BAM.templength, group)
+            
+            ispair(template_group[1]) && (haspaired = true)
+
+            ### Get read start, stop and strand
+            ### Count group sizes after splitting into equivalence classes, e.g. by read name or barcode
+            chrom, fragstart, fragstop, fragstrand = fragcoords(template_group[1])
+
+            ### Regroup again by single cell barcodes if neeeded
+            sort!(template_group, by=sc_bcf)
+            for sc_group in IterTools.groupby(sc_bcf, template_group)
+                
+                fragcounts = [length(unique(ef, filter(ff, sc_group))) for (ff, ef) in equivs]
+                !any(!iszero, fragcounts) && continue
+                
+                chromind = chromindex[chrom]
+
+                # display((fragstart, fragstop, set_strand_chrom_enc(fragstrand, chromind, UInt32), (fc for fc in frag_counts)...))
+                write(io, T(fragstart))         ### start
+                write(io, T(fragstop))          ### stop
+                write(io, set_strand_chrom_enc(fragstrand, chromind, T))          ### chrom strand enc
+
+                #### first column total written frags
+                totalfrags[chromind, 1] += 1
+                #### remaining cols, equiv_fun frags
+                for (i, fc) in enumerate(fragcounts)
+                    write(io, T(fc))
+                    totalfrags[chromind, i+1] += fc
+                end
+
+                ## write the barcode index
+                write(io, T(sc_bcf(sc_group[1])))
+            end
+        end
+    end
+    chroms, totalfrags, haspaired
+end
 #streambam("c:\\home\\julia\\test\\test.bam", "c:\\home\\julia\\test\\test.bin", [(qualityfilt(0), seqname), (qualityfilt(20), seqname)], ["q0", "q20"])
 
 
 #streambam("c:\\home\\projects\\islets\\endoc\\k9\\bw2_k9me2.sort.bam", "c:\\home\\projects\\islets\\endoc\\k9\\bw2_k9me2.q30.sort.bin", [(qualityfilt(30), seqname)], ["q30"])
 #streambam("c:\\home\\projects\\islets\\endoc\\k9\\bw2_k9me3.sort.bam", "c:\\home\\projects\\islets\\endoc\\k9\\bw2_k9me3.q30.sort.bin", [(qualityfilt(30), seqname)], ["q30"])
+
+
+#streambam_singlecell("c:\\home\\projects\\panc_snATAC\\test.bam", "c:\\home\\projects\\panc_snATAC\\test2.bin")
