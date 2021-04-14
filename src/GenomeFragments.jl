@@ -13,7 +13,8 @@ export FragMatrix, FragMatrixPair, FragMatrixSingle, get_frags, chrom_lt, load_f
        inc_meta_mid_width, inc_heat_mid_width,
        inc_heat_atac_cut_width, inc_meta_atac_cut_width,
        readsintersecting, fragregion,
-       fragheatmap, fragheatmap!
+       fragheatmap, fragheatmap!,
+       streambam_singlecell
 
 
 include("fragmatrix.jl")
