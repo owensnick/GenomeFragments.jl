@@ -5,11 +5,16 @@
 qualityfilt(τ) = r -> BAM.mappingquality(r) >= τ
 @inline isunique(record) = BAM.mappingquality(record) == 255
 #@inline isreverse(record)   = (BAM.flag(record) & SAM.FLAG_REVERSE) != 0
-@inline ispair(record)      = (BAM.flag(record) & SAM.FLAG_PAIRED)  != 0
-@inline firstinpair(record) = (BAM.flag(record) & SAM.FLAG_READ1)   != 0
-@inline properpair(record)  = (BAM.flag(record) & SAM.FLAG_PROPER_PAIR) != 0
-@inline posstrand(record)  = (BAM.position(record), BAM.ispositivestrand(record))
+# @inline ispair(record)      = (BAM.flag(record) & SAM.FLAG_PAIRED)  != 0
+# @inline firstinpair(record) = (BAM.flag(record) & SAM.FLAG_READ1)   != 0
+# @inline properpair(record)  = (BAM.flag(record) & SAM.FLAG_PROPER_PAIR) != 0
+# @inline posstrand(record)  = (BAM.position(record), BAM.ispositivestrand(record))
 
+@inline isreverse(record)   = (BAM.flag(record) & 0x010) != 0
+@inline ispair(record)      = (BAM.flag(record) & 0x001)  != 0
+@inline firstinpair(record) = (BAM.flag(record) & 0x040)   != 0
+@inline properpair(record)  = (BAM.flag(record) & 0x002) != 0
+@inline posstrand(record)  = (BAM.position(record), BAM.ispositivestrand(record))
 
 @inline getstrand(record) = BAM.ispositivestrand(record) ? STRAND_POS : STRAND_NEG
 @inline filterpairfirst(record) = BAM.ismapped(record) && (!ispair(record) ? true : (((BAM.position(record) == BAM.nextposition(record)) && BAM.ispositivestrand(record)) || (BAM.templength(record) ≥ 0)))
